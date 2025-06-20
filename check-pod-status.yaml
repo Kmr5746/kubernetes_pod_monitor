@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-pod-status
+spec:
+  template:
+    spec:
+      containers:
+      - name: pod-checker
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/bash
+        - -c
+        - |
+          UNHEALTHY_PODS=$(kubectl get pods --all-namespaces --field-selector=status.phase!=Running -o json | jq -r '.items[].metadata.name')
+          if [[ -n "$UNHEALTHY_PODS" ]]; then
+            echo "Unhealthy pods detected: $UNHEALTHY_PODS"
+            # Simulate email or log
+            echo "Sending alert to engineering team"
+            exit 1
+          else
+            echo "All pods are healthy"
+          fi
+      restartPolicy: Never
+  backoffLimit: 1
