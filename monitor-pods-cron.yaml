@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pod-health-monitor
+spec:
+  schedule: "*/2 * * * *"  # every 2 mins
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: pod-health-check
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/bash
+            - -c
+            - |
+              BAD_PODS=$(kubectl get pods --all-namespaces --field-selector=status.phase!=Running -o json | jq -r '.items[].metadata.name')
+              if [[ -n "$BAD_PODS" ]]; then
+                echo "Pod issues found: $BAD_PODS"
+                # simulate alert
+                echo "Alerting team about: $BAD_PODS"
+              else
+                echo "All pods are running fine"
+          restartPolicy: OnFailure
